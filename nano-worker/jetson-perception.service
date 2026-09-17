@@ -1,0 +1,27 @@
+[Unit]
+Description=Jetson Perception Worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=erik
+Group=erik
+WorkingDirectory=/home/erik/perception
+EnvironmentFile=/etc/perception/env
+ExecStart=/home/erik/perception/.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8800 --workers 1
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/mnt/ssd/perception /home/erik/perception
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
