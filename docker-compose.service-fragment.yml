@@ -1,0 +1,60 @@
+# Root-compose fragment for /home/user/docker/docker-compose.yml.
+# Keep behind the profile until Nano SSD, DHCP, token and service registry are done.
+services:
+  perception-orchestrator:
+    profiles: ["manual-perception"]
+    build: ./perception-orchestrator
+    image: "homelab/perception-orchestrator:${PERCEPTION_ORCHESTRATOR_IMAGE_TAG:-2026.06.04}"
+    container_name: perception-orchestrator
+    restart: unless-stopped
+    env_file:
+      - ./perception-orchestrator/.env
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+    user: "1000:1000"
+    ports:
+      - "127.0.0.1:8810:8000"
+    volumes:
+      - ./perception-orchestrator/data:/data
+    environment:
+      SERVICE_NAME: perception-orchestrator
+      ENV: prod
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      AUTH_REQUIRED: "true"
+      LOG_LEVEL: INFO
+      HEALTH_DB_PATH: /data/state/perception.sqlite
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+          cpus: "0.5"
+    networks:
+      - cc-core
+      - cc-proxy
+    depends_on:
+      - mosquitto
+    labels:
+      homelab.service: "perception-orchestrator"
+      homelab.category: "eigenbau"
+      homelab.route: "/perception-orchestrator/"
+
+networks:
+  cc-core:
+    external: true
+    name: cc-core
+  cc-proxy:
+    external: true
+    name: cc-proxy

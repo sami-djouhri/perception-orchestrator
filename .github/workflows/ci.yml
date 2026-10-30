@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-asyncio
+      - name: Run tests
+        # Die Datenpfade defaulten auf /data (im Container ein Volume). In CI auf ein
+        # beschreibbares Temp-Verzeichnis umbiegen (Config ist env-getrieben, BaseSettings).
+        env:
+          INBOX_ROOT: ${{ runner.temp }}/inbox
+          ORIGINALS_ROOT: ${{ runner.temp }}/originals
+          RESULTS_ROOT: ${{ runner.temp }}/results
+          QUEUE_DB: ${{ runner.temp }}/state/perception.sqlite
+        run: pytest -q
